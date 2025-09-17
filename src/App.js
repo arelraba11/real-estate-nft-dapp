@@ -15,22 +15,31 @@ import config from './config.json';
 
 function App() {
 
-  const [accounts, setAccount] = useState(null)
+  // State to store the current user's Ethereum account address
+  const [account, setAccount] = useState(null)
 
+  // Function to load blockchain data and set up event listeners
   const loadBlockchainData = async () => {
+    // Create a new Web3 provider using the browser's Ethereum provider (e.g., MetaMask)
     const provider = new ethers.providers.Web3Provider(window.ethereum)
-    const accounts = await window.ethereum.request({ method: `eth_requestAccounts`});
-    setAccount(accounts[0])
-    console.log(accounts[0])
+
+    // Listen for changes to the user's Ethereum accounts and update the state accordingly
+    window.ethereum.on('accountsChanged', async () => {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const account = ethers.utils.getAddress(accounts[0])
+      setAccount(account);
+    })
   }
 
+  // useEffect hook runs once on component mount to load blockchain data
   useEffect(()=>{
     loadBlockchainData()
   }, [])
 
+  // Render the main app components including navigation and welcome message
   return (
     <div>
-
+      <Navigation account={account} setAccount={setAccount} />
       <div className='cards__section'>
 
         <h3>Welcome to Millow!</h3>
