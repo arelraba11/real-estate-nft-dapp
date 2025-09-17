@@ -16,35 +16,35 @@ contract Escrow {
     address payable public seller;
     address public nftAddress;
 
-    // Ensures that only the buyer associated with the NFT ID can call the function
+    // Restricts function access to the buyer of the specified NFT
     modifier onlyBayer(uint256 _nftID) {
         require(msg.sender == buyer[_nftID], "Only buyer can call this method");
         _;
     }
 
-    // Ensures that only the seller can call the function
+    // Restricts function access to the seller
     modifier onlySeller() {
         require(msg.sender == seller, "Only seller can call this method");
         _;
     }
 
-    // Ensures that only the inspector can call the function
+    // Restricts function access to the inspector
     modifier onlyInspector() {
         require(msg.sender == inspector, "Only inspector can call this method");
         _;
     }
 
-    // Tracks whether an NFT is listed for sale
+    // Indicates if an NFT is listed for sale
     mapping(uint256 => bool) public isListed;
-    // Stores the purchase price for each NFT
+    // Purchase price set for each NFT
     mapping(uint256 => uint256) public purchasePrice;
-    // Stores the required escrow amount for each NFT
+    // Required escrow deposit for each NFT
     mapping(uint256 => uint256) public escrowAmount;
-    // Maps each NFT to its buyer's address
+    // Buyer address associated with each NFT
     mapping(uint256 => address) public buyer;
-    // Records whether the inspection has passed for each NFT
+    // Inspection status for each NFT
     mapping(uint256 => bool) public inspectionPassed;
-    // Records approval status from involved parties for each NFT
+    // Approval status from involved parties per NFT
     mapping(uint256 => mapping(address => bool)) public approval;
 
     // Initializes contract with NFT address and role addresses
@@ -55,7 +55,7 @@ contract Escrow {
         lender = _lender;
     }
 
-    // Lists an NFT for sale and transfers it to escrow
+    // Lists an NFT and transfers it to escrow
     function list(uint256 _nftID ,address _buyer ,uint256 _purchasePrice ,uint256 _escrowAmount) public payable onlySeller {
         IERC721(nftAddress).transferFrom(msg.sender, address(this), _nftID);
         isListed[_nftID] = true;
@@ -64,28 +64,41 @@ contract Escrow {
         buyer[_nftID] = _buyer;
     }
 
-    // Allows the buyer to deposit the earnest money (escrow amount)
+    // Buyer deposits earnest money (escrow)
     function depositEarnest(uint256 _nftID) public payable onlyBayer(_nftID) {
         require(msg.value >= escrowAmount[_nftID]);
     }
 
-    // Updates the inspection status for the NFT; callable only by the inspector
+    // Updates inspection result; callable by inspector only
     function updateInspectionStatus(uint256 _nftID, bool _passed) public onlyInspector{
         inspectionPassed[_nftID] = _passed;
     }
 
-    // Records approval of the sale from involved parties
+    // Records approval from a party for the sale
     function approveSale(uint256 _nftID) public {
         approval[_nftID][msg.sender] = true;
     }    
 
-    // Accepts Ether sent directly to the contract
+    // Accepts Ether sent directly to contract
     receive() external payable{}
 
-    // Returns the current balance held by the escrow contract
+    // Returns escrow contract balance
     function getBalance() public view returns (uint256) {
         return address(this).balance;
     }
 
+    // Completes the sale after all conditions are met
+    function finalizeSale(uint256 _nftID) public{
+        require(inspectionPassed[_nftID]);
+        require(approval[_nftID][buyer[_nftID]]);
+        require(approval[_nftID][seller]);
+        require(approval[_nftID][lender]);
+        require(address(this).balance >= purchasePrice[_nftID]);
+
+        (bool success, ) = payable(seller).call{value: address(this).balance}("");
+        require(success);
+
+        IERC721(nftAddress).transferFrom(address(this), buyer[_nftID], _nftID);
+    }
 
 }
