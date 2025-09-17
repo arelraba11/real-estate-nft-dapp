@@ -1,3 +1,4 @@
+// Escrow contract for handling real estate NFT transactions
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
@@ -15,6 +16,19 @@ contract Escrow {
     address payable public seller;
     address public nftAddress;
 
+    // Restricts function access to seller
+    modifier onlySeller() {
+        require(msg.sender == seller, "Only seller can call this method");
+        _;
+    }
+
+    // Track listing status, prices, escrow amounts, and buyers
+    mapping(uint256 => bool) public isListed;
+    mapping(uint256 => uint256) public purchasePrice;
+    mapping(uint256 => uint256) public escrowAmount;
+    mapping(uint256 => address) public buyer;
+
+    // Initialize escrow with roles and NFT contract
     constructor(address _nftAddress, address payable _seller, address _inspector, address _lender){
         nftAddress = _nftAddress;
         inspector = _inspector;
@@ -22,8 +36,12 @@ contract Escrow {
         lender = _lender;
     }
 
-    function list(uint256 _nftID) public{
-        // Transfer NFT from seller to this contract
+    // List property and transfer NFT to escrow
+    function list(uint256 _nftID ,address _buyer ,uint256 _purchasePrice ,uint256 _escrowAmount) public payable onlySeller {
         IERC721(nftAddress).transferFrom(msg.sender, address(this), _nftID);
+        isListed[_nftID] = true;
+        purchasePrice[_nftID] = _purchasePrice;
+        escrowAmount[_nftID] = _escrowAmount;
+        buyer[_nftID] = _buyer;
     }
 }
