@@ -16,6 +16,11 @@ contract Escrow {
     address payable public seller;
     address public nftAddress;
 
+    modifier onlyBayer(uint256 _nftID) {
+        require(msg.sender == buyer[_nftID], "Only buyer can call this method");
+        _;
+    }
+
     // Restricts function access to seller
     modifier onlySeller() {
         require(msg.sender == seller, "Only seller can call this method");
@@ -43,5 +48,16 @@ contract Escrow {
         purchasePrice[_nftID] = _purchasePrice;
         escrowAmount[_nftID] = _escrowAmount;
         buyer[_nftID] = _buyer;
+    }
+
+    //Put under contract(only bayer - payable escrow)
+    function depositEarnest(uint256 _nftID) public payable onlyBayer(_nftID) {
+        require(msg.value >= escrowAmount[_nftID]);
+    }
+    
+    receive() external payable{}
+
+    function getBalance() public view returns (uint256) {
+        return address(this).balance;
     }
 }
