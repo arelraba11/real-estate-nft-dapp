@@ -31,7 +31,7 @@ async function main() {
   const escrow = await Escrow.deploy(realEstate.address,seller.address, inspector.address, lender.address)
   await escrow.deployed()
 
-  console.log(`deployed real estate contract at: ${escrow.address}`)
+  console.log(`deployed escrow contract at: ${escrow.address}`)
 
   for(let i =0 ; i<3;i++){
     // Approve properties

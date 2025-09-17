@@ -14,16 +14,24 @@ import Escrow from './abis/Escrow.json'
 import config from './config.json';
 
 function App() {
-
-  // State to store the current user's Ethereum account address
+  const [escrow, setEscrow] = useState(null)
+  const [provider,setProvider] = useState(null)
   const [account, setAccount] = useState(null)
 
   // Function to load blockchain data and set up event listeners
   const loadBlockchainData = async () => {
-    // Create a new Web3 provider using the browser's Ethereum provider (e.g., MetaMask)
     const provider = new ethers.providers.Web3Provider(window.ethereum)
+    setProvider(provider)
 
-    // Listen for changes to the user's Ethereum accounts and update the state accordingly
+    const network = await provider.getNetwork()
+    console.log("Connected chainId:", network.chainId)
+
+    const realEstate = new ethers.Contract(config[network.chainId].realEstate.address, RealEstate.abi, provider)
+    const totalSupply = await realEstate.totalSupply()
+    
+    const escrow = new ethers.Contract(config[network.chainId].escrow.address, Escrow,provider)
+    setEscrow(escrow)
+
     window.ethereum.on('accountsChanged', async () => {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       const account = ethers.utils.getAddress(accounts[0])
