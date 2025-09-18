@@ -3,30 +3,60 @@ import { useEffect, useState } from 'react';
 
 import close from '../assets/close.svg';
 
-const Home = ({ home, provider, escrow, togglePop }) => {
-    
+const Home = ({ home, provider, account, escrow, togglePop }) => {
+    const [hasBought, setHasBought] = useState(false)
+    const [hasLended, setHasLended] = useState(false)
+    const [hasInspected, setHasInspected] = useState(false)
+    const [hasSold, setHasSold] = useState(false)
+
     const [buyer, setBuyer] = useState(null)
     const [lender, setLnder] = useState(null)
     const [inspector, setInspector] = useState(null)
     const [seller, setSeller] = useState(null)
+
+    const [owner, setOwner] = useState(null)
 
     const fetchDetails = async () => {
         // -- Buyer
         const buyer = await escrow.buyer(home.id)
         setBuyer(buyer)
 
+        const hasBought = await escrow.approval(home.id, buyer)
+        setHasBought(hasBought)
+
         // -- Seller
         const seller = await escrow.seller()
         setSeller(seller)
+
+        const hasSold = await escrow.approval(home.id, seller)
+        setHasSold(hasSold)
 
         // -- Lender
         const lender = await escrow.lender()
         setLnder(lender)
 
+        const hasLended = await escrow.approval(home.id, lender)
+        setHasLended(hasLended)
+
         // -- Inspector
         const inspector = await escrow.inspector()
         setInspector(inspector)
+
+        const hasInspected = await escrow.inspectionPasser(home.id)
+        setHasInspected(hasInspected)
     }
+
+    const fetchOwner = async () => {
+        if (await escrow.isListed(home.id)) return
+
+        const owner = await escrow.buyer(home.id)
+        setOwner(owner)
+    }
+
+    useEffect(() => {
+        fetchDetails()
+        fetchOwner()
+    }, [hasSold])
 
     return (
         <div className="home">
@@ -53,8 +83,25 @@ const Home = ({ home, provider, escrow, togglePop }) => {
                         <li key={index}><strong>{attribute.trait_type}</strong> : {attribute.value}</li>
                         ))}
                     </ul>
-                    <div><button className='home__contact'>Contact agent</button></div>
-                    <div><button className='home__buy'>Buy</button> </div>
+
+                    {owner ? (
+                        <div className='home__owned'>
+                            Owned by {owner.slice(0,6) + '...' + owner.slice(38,42)}
+                        </div>
+                    ) : (
+                        <div>
+                            {(account === inspector) ? (
+                                <button className='home__buy'>Approve Inspection</button>
+                            ) : (account === lender) ? (
+                                <button className='home__buy'>Approve & Lend</button>
+                            ) : (account === seller) ? (
+                                <button className='home__buy'>Approve & Sell</button>
+                            ) : (
+                                <button className='home__buy'>Buy</button>
+                            )}
+                        </div>
+                    )}
+                    <button className='home__contact'>Contact agent</button>
                 </div>
 
                 <button onClick={togglePop} className='home__close'>
