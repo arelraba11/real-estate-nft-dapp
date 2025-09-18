@@ -1,5 +1,7 @@
+// Importing the logo image used in the navigation bar
 import logo from '../assets/logo.svg';
 
+// Main navigation bar component receiving account props
 // Navigation bar component for the dApp
 const Navigation = ({ account, setAccount }) => {
     // Function to request accounts from MetaMask and set the connected account

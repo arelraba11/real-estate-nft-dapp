@@ -6,10 +6,12 @@
 // global scope, and execute the script.
 const hre = require("hardhat");
 
+// Converts a number to wei/ether units
 const tokens = (n) => {
     return ethers.utils.parseUnits(n.toString(), 'ether')
 }
 
+// Handles the full deployment process
 async function main() {
   [buyer, seller, inspector, lender] = await ethers.getSigners()
   
@@ -21,6 +23,7 @@ async function main() {
   console.log(`Deployed Real Estate Contract at: ${realEstate.address}`)
   console.log(`Miniting 3 properties... \n`)
 
+  // Mint sample property NFTs
   for(let i = 0 ; i < 3 ; i++){
     const transaction = await realEstate.connect(seller).mint(`/metadata/${i+1}.json`)
     await transaction.wait()
@@ -33,13 +36,13 @@ async function main() {
 
   console.log(`deployed escrow contract at: ${escrow.address}`)
 
+  // Grant escrow contract approval to manage tokens
   for(let i =0 ; i<3;i++){
-    // Approve properties
     let transaction = await realEstate.connect(seller).approve(escrow.address, i+1)
     await transaction.wait()
   }
 
-  // Listing properties
+  // List properties on escrow contract with purchase and escrow prices
   transaction = await escrow.connect(seller).list(1, buyer.address, tokens(20), tokens(10))
   await transaction.wait()
 

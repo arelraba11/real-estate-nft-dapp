@@ -21,6 +21,7 @@ function App() {
   const [home, setHome] = useState({})
   const [toggle, setToggle] = useState(false)
 
+  // Loads blockchain data, contract instances, and home metadata from the network
   const loadBlockchainData = async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum)
     setProvider(provider)
@@ -33,6 +34,7 @@ function App() {
     const homes = []
 
     for (let i = 1; i <= totalSupply; i++) {
+      // Fetch home metadata from local JSON files
       const uri = `/metadata/${i}.json`
       const response = await fetch(uri)
       const metadata = await response.json()
@@ -55,11 +57,13 @@ function App() {
     loadBlockchainData()
   }, [])
 
+  // Toggles the popup for viewing a selected home
   const togglePop = (home) => {
     setHome(home)
     toggle ? setToggle(false) : setToggle(true)
   }
 
+  // Render the UI
   return (
     <div>
       <Navigation account={account} setAccount={setAccount} />

@@ -1,14 +1,16 @@
-import { ethers } from 'ethers';
+// Home component for property details and transaction actions
 import { useEffect, useState } from 'react';
 
 import close from '../assets/close.svg';
 
 const Home = ({ home, provider, account, escrow, togglePop }) => {
+    // Track user and transaction states
     const [hasBought, setHasBought] = useState(false)
     const [hasLended, setHasLended] = useState(false)
     const [hasInspected, setHasInspected] = useState(false)
     const [hasSold, setHasSold] = useState(false)
 
+    // Store participant addresses
     const [buyer, setBuyer] = useState(null)
     const [lender, setLnder] = useState(null)
     const [inspector, setInspector] = useState(null)
@@ -16,6 +18,7 @@ const Home = ({ home, provider, account, escrow, togglePop }) => {
 
     const [owner, setOwner] = useState(null)
 
+    // Fetch transaction details from escrow contract
     const fetchDetails = async () => {
         // -- Buyer
         const buyer = await escrow.buyer(home.id)
@@ -46,6 +49,7 @@ const Home = ({ home, provider, account, escrow, togglePop }) => {
         setHasInspected(hasInspected)
     }
 
+    // Fetch current property owner if not listed
     const fetchOwner = async () => {
         if (await escrow.isListed(home.id)) return
 
@@ -53,6 +57,7 @@ const Home = ({ home, provider, account, escrow, togglePop }) => {
         setOwner(owner)
     }
 
+    // Handle buyer actions
     const buyHandler = async () => {
         const escrowAmount = await escrow.escrowAmount(home.id)
         const signer = await provider.getSigner()
@@ -68,6 +73,7 @@ const Home = ({ home, provider, account, escrow, togglePop }) => {
         setHasBought(true)
     }
 
+    // Handle inspector actions
     const inspectHandler = async () => {
         const signer = await provider.getSigner()
 
@@ -78,6 +84,7 @@ const Home = ({ home, provider, account, escrow, togglePop }) => {
         setHasInspected(true)
     }
 
+    // Handle lender actions
     const lendHandler = async () => {
         const signer = await provider.getSigner()
 
@@ -92,6 +99,7 @@ const Home = ({ home, provider, account, escrow, togglePop }) => {
         setHasLended(true)
     }
 
+    // Handle seller actions
     const sellHandler = async () => {
         const signer = await provider.getSigner()
 
@@ -106,6 +114,7 @@ const Home = ({ home, provider, account, escrow, togglePop }) => {
         setHasSold(true)
     }
 
+    // Load details on component mount and when sale completes
     useEffect(() => {
         fetchDetails()
         fetchOwner()

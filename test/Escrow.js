@@ -1,7 +1,7 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
-// Converts a number to its equivalent in ether units
+// Test suite for the Escrow contract managing NFT real estate transactions
 const tokens = (n) => {
     return ethers.utils.parseUnits(n.toString(), 'ether')
 }
@@ -11,16 +11,13 @@ describe('Escrow', () => {
     let realEstate, escrow
 
     beforeEach(async ()=> {
-        // Initialize test accounts
         [buyer, seller, inspector, lender] = await ethers.getSigners()
 
-        // Deploy RealEstate contract and mint NFT to seller
         const RealEstate = await ethers.getContractFactory('RealEstate')
         realEstate = await RealEstate.deploy()
         let transaction = await realEstate.connect(seller).mint("/metadata/1.json")
         await transaction.wait()
 
-        // Deploy Escrow contract with assigned roles
         const Escrow = await ethers.getContractFactory('Escrow')
         escrow = await Escrow.deploy(
             realEstate.address,
@@ -28,7 +25,6 @@ describe('Escrow', () => {
               inspector.address,
                lender.address)
 
-        // Approve and list the NFT on escrow
         transaction = await realEstate.connect(seller).approve(escrow.address,1)
         await transaction.wait()
         transaction = await escrow.connect(seller).list(1, buyer.address, tokens(10), tokens(5))
@@ -36,61 +32,51 @@ describe('Escrow', () => {
     })
 
     describe('Deployment', () => {
-        // Check NFT contract address
-        it('saves NFT address', async() => {
+        it('stores NFT contract address', async() => {
             const result = await escrow.nftAddress()
             expect(result).to.be.equal(realEstate.address)
         })
 
-        // Check seller address
-        it('saves seller', async() => {
+        it('stores seller address', async() => {
             const result = await escrow.seller()
             expect(result).to.be.equal(seller.address)
         })
 
-        // Check inspector address
-        it('saves inspector', async() => {
+        it('stores inspector address', async() => {
             const result = await escrow.inspector()
             expect(result).to.be.equal(inspector.address)
         })
 
-        // Check lender address
-        it('saves lender', async() => {
+        it('stores lender address', async() => {
             const result = await escrow.lender()
             expect(result).to.be.equal(lender.address)
         })
     })
 
     describe('Listing', () => {
-        // Verify NFT ownership transfers to escrow upon listing
-        it('Updates ownership', async() => {
+        it('transfers NFT ownership to escrow upon listing', async() => {
             expect(await realEstate.ownerOf(1)).to.be.equal(escrow.address)
         })
 
-        // Verify buyer is recorded correctly
-        it('Returns buyer', async() => {
+        it('records the buyer correctly', async() => {
             const result = await escrow.buyer(1)
             expect(result).to.be.equal(buyer.address)
         })
 
-        // Verify listing details are stored accurately
-        it('records custom listing details', async () => {
+        it('stores custom listing details accurately', async () => {
             const [newBuyer] = await ethers.getSigners()
             const tokenId = 2
 
-            // Mint and approve new NFT
             let transaction = await realEstate.connect(seller).mint("/metadata/2.json")
             await transaction.wait()
             transaction = await realEstate.connect(seller).approve(escrow.address, tokenId)
             await transaction.wait()
 
-            // List new property with specified price and escrow amount
             const customPrice = tokens(15)
             const customEscrowAmount = tokens(7)
             transaction = await escrow.connect(seller).list(tokenId, newBuyer.address, customPrice, customEscrowAmount)
             await transaction.wait()
 
-            // Confirm listing details
             const isListed = await escrow.isListed(tokenId)
             const buyerAddress = await escrow.buyer(tokenId)
             const purchasePrice = await escrow.purchasePrice(tokenId)
@@ -104,8 +90,7 @@ describe('Escrow', () => {
     })
 
     describe('Deposits', () =>{
-        // Verify contract balance updates after earnest deposit
-        it('Updates contract balance', async()=> {
+        it('updates contract balance after earnest deposit', async()=> {
             const transaction = await escrow.connect(buyer).depositEarnest(1, {value: tokens(5)})
             await transaction.wait()
             const result = await escrow.getBalance()
@@ -114,8 +99,7 @@ describe('Escrow', () => {
     })
 
     describe('Inspection', () =>{
-        // Verify inspection status update
-        it('Updates inspection status', async()=> {
+        it('updates inspection status', async()=> {
             const transaction = await escrow.connect(inspector).updateInspectionStatus(1, true)
             await transaction.wait()
             const result = await escrow.inspectionPassed(1)
@@ -124,8 +108,7 @@ describe('Escrow', () => {
     })
 
     describe('Approval', () =>{
-        // Verify approval status updates for buyer, seller, and lender
-        it('Updates approval status', async()=> {
+        it('updates approval status for all parties', async()=> {
             let transaction = await escrow.connect(buyer).approveSale(1)
             await transaction.wait()
 
@@ -142,7 +125,6 @@ describe('Escrow', () => {
     })
     describe('Sale', () =>{
         beforeEach(async () => {
-            // Complete prerequisites for finalizing sale
             let transaction = await escrow.connect(buyer).depositEarnest(1, {value: tokens(5)})
             await transaction.wait()
 
@@ -164,13 +146,11 @@ describe('Escrow', () => {
             await transaction.wait()
         })
 
-        // Verify ownership transfers to buyer
-        it('Updates ownership', async () => {
+        it('transfers ownership to buyer', async () => {
             expect(await realEstate.ownerOf(1)).to.be.equal(buyer.address)
         })
 
-        // Verify escrow contract balance resets after sale
-        it('works', async () => {
+        it('resets escrow contract balance after sale', async () => {
             expect(await escrow.getBalance()).to.be.equal(0)
         })
     })

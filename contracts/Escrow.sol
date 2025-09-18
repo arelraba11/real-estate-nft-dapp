@@ -1,4 +1,4 @@
-// Escrow contract for managing real estate NFT transactions
+// Escrow smart contract for handling real estate NFT transactions with roles and conditions
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
@@ -16,28 +16,27 @@ contract Escrow {
     address payable public seller;
     address public nftAddress;
 
-    // Allows only the buyer of the NFT to call this function
+    // Restricts access to the buyer of the given NFT
     modifier onlyBayer(uint256 _nftID) {
         require(msg.sender == buyer[_nftID], "Only buyer can call this method");
         _;
     }
 
-    // Allows only the seller to call this function
+    // Restricts access to the seller
     modifier onlySeller() {
         require(msg.sender == seller, "Only seller can call this method");
         _;
     }
 
-    // Allows only the inspector to call this function
+    // Restricts access to the inspector
     modifier onlyInspector() {
         require(msg.sender == inspector, "Only inspector can call this method");
         _;
     }
 
     /**
-     * These mappings track the state and details of each property/NFT
-     * involved in the escrow process, including listing status, purchase price,
-     * escrow deposit, buyer address, inspection status, and approvals from involved parties.
+     * Mappings to manage property state:
+     * - Listing status, price, escrow deposit, buyer, inspection status, and approvals.
      */
     mapping(uint256 => bool) public isListed;
     mapping(uint256 => uint256) public purchasePrice;
@@ -46,7 +45,6 @@ contract Escrow {
     mapping(uint256 => bool) public inspectionPassed;
     mapping(uint256 => mapping(address => bool)) public approval;
 
-    // Initializes contract with NFT address and role addresses
     constructor(address _nftAddress, address payable _seller, address _inspector, address _lender){
         nftAddress = _nftAddress;
         inspector = _inspector;
@@ -54,7 +52,7 @@ contract Escrow {
         lender = _lender;
     }
 
-    // Lists an NFT and transfers it to escrow
+    // List an NFT and transfer it into escrow
     function list(uint256 _nftID ,address _buyer ,uint256 _purchasePrice ,uint256 _escrowAmount) public payable onlySeller {
         IERC721(nftAddress).transferFrom(msg.sender, address(this), _nftID);
         isListed[_nftID] = true;
@@ -63,22 +61,22 @@ contract Escrow {
         buyer[_nftID] = _buyer;
     }
 
-    // Buyer deposits earnest money (escrow)
+    // Buyer deposits escrow funds
     function depositEarnest(uint256 _nftID) public payable onlyBayer(_nftID) {
         require(msg.value >= escrowAmount[_nftID]);
     }
 
-    // Updates inspection result; callable by inspector only
+    // Inspector updates inspection result
     function updateInspectionStatus(uint256 _nftID, bool _passed) public onlyInspector{
         inspectionPassed[_nftID] = _passed;
     }
 
-    // Records approval from a party for the sale
+    // Records approval from a party
     function approveSale(uint256 _nftID) public {
         approval[_nftID][msg.sender] = true;
     }    
 
-    // Completes the sale after all conditions are met
+    // Finalize the sale after all requirements are met
     function finalizeSale(uint256 _nftID) public{
         require(inspectionPassed[_nftID]);
         require(approval[_nftID][buyer[_nftID]]);
@@ -94,7 +92,7 @@ contract Escrow {
         IERC721(nftAddress).transferFrom(address(this), buyer[_nftID], _nftID);
     }
 
-    // Cancels the sale and refunds or transfers escrow funds based on inspection result
+    // Cancel the sale and handle refunds based on inspection
     function cancelSale(uint256 _nftID) public{
         if(inspectionPassed[_nftID] == false){
             payable(buyer[_nftID]).transfer(address(this).balance);
@@ -103,10 +101,10 @@ contract Escrow {
         }
     }
 
-    // Accepts Ether sent directly to contract
+    // Accept direct Ether transfers
     receive() external payable{}
 
-    // Returns escrow contract balance
+    // Get escrow contract balance
     function getBalance() public view returns (uint256) {
         return address(this).balance;
     }
