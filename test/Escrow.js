@@ -17,7 +17,7 @@ describe('Escrow', () => {
         // Deploy RealEstate contract and mint NFT to seller
         const RealEstate = await ethers.getContractFactory('RealEstate')
         realEstate = await RealEstate.deploy()
-        let transaction = await realEstate.connect(seller).mint("https://ipfs.io/ipfs/QmQvcpsjrA6cr1iJjZAodYwmPekYgbnXGo4DFubJiLc2EB/1.json")
+        let transaction = await realEstate.connect(seller).mint("/metadata/1.json")
         await transaction.wait()
 
         // Deploy Escrow contract with assigned roles
@@ -79,7 +79,7 @@ describe('Escrow', () => {
             const tokenId = 2
 
             // Mint and approve new NFT
-            let transaction = await realEstate.connect(seller).mint("https://ipfs.io/ipfs/QmQvcpsjrA6cr1iJjZAodYwmPekYgbnXGo4DFubJiLc2EB/2.json")
+            let transaction = await realEstate.connect(seller).mint("/metadata/2.json")
             await transaction.wait()
             transaction = await realEstate.connect(seller).approve(escrow.address, tokenId)
             await transaction.wait()
