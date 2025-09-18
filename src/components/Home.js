@@ -12,7 +12,7 @@ const Home = ({ home, provider, account, escrow, togglePop }) => {
 
     // Store participant addresses
     const [buyer, setBuyer] = useState(null)
-    const [lender, setLnder] = useState(null)
+    const [lender, setLender] = useState(null)
     const [inspector, setInspector] = useState(null)
     const [seller, setSeller] = useState(null)
 
@@ -36,7 +36,7 @@ const Home = ({ home, provider, account, escrow, togglePop }) => {
 
         // -- Lender
         const lender = await escrow.lender()
-        setLnder(lender)
+        setLender(lender)
 
         const hasLended = await escrow.approval(home.id, lender)
         setHasLended(hasLended)
